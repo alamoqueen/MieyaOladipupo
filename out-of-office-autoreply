@@ -1,0 +1,56 @@
+// Out of Office Autoreply - Google Script code inspired based on Evan Weinberg's (Twitter: @emwdx) coding.
+// This code was based orginally on the code for the google script autoreply post here on stack overflow: https://stackoverflow.com/questions/38955161/google-gmail-script-time-auto-reply
+
+function autoReply() {
+    var interval = 5;  // Set to the number of minutes between runs of this script.
+    var daysOff = [0, 6];
+    var weekdayMessageDays = [1, 2, 3, 4, 5];  // 1=Mo, 2=Tu, 3=We, 4=Th, 5=Fr, 6=Sa, 0=Su
+    var workingHours = [9, 17];  // 0-24
+    
+
+    
+    // Set your messages here.
+    var weekdayMessage = "Hey there!\n\nWe're out of the office recharging after a busy day and will return tomorrow, fresh and ready to respond to your email faster than a cat video goes viral.\n\nIf your matter is urgent and just can't wait, please call the REALTOR®️ on file for immediate assistance.\n\nMo & Co. Real Estate Transaction Coordinators";
+
+    var weekendMessage = "Hey there!\n\nWe're currently stepping back for some weekend downtime to bring our best selves to you next week. We’ll be back in action on [Monday's date] ready to jump on your email.\n\nIf you need immediate help, please call the REALTOR®️ on file.\n\nEnjoy your weekend!\n\nMo & Co. Real Estate Transaction Coordinators";
+
+    var earlyMorningMessage = "Hey there!\n\nWanted to send a quick confirmation that we received your email and will respond when we arrive at the office at 9 am.\n\nIf your matter is urgent and just can't wait, please call the REALTOR®️ on file for immediate assistance.\n\nMo & Co. Real Estate Transaction Coordinators";
+
+    var date = new Date();
+    var day = date.getDay();
+    var hour = date.getHours();
+    var isWorkday = (daysOff.indexOf(day) == -1);
+    var isOutsideHours = (hour < workingHours[0] || hour >= workingHours[1]);
+    var isEarlyMorning = (hour >= 5 && hour < 9);
+    var sendAutoreply = !isWorkday || isOutsideHours;
+    var sentMessage = "";
+
+    // You can send different messages for weekdays, weekends, and early mornings.
+    if (isWorkday) {
+        if (isEarlyMorning) {
+            sentMessage = earlyMorningMessage;
+        } else if (hour >= workingHours[1] || hour < workingHours[0]) {
+            sentMessage = weekdayMessage;
+        }
+    } else {
+        sentMessage = weekendMessage;
+    }
+
+     if (sendAutoreply) {
+        var timeFrom = Math.floor(date.valueOf() / 1000) - 60 * interval;
+        var threads = GmailApp.search('is:inbox after:' + timeFrom);
+        for (var i = 0; i < threads.length; i++) {
+            if (threads[i].isUnread()) {
+                // Always reply to all emails.
+                var isFromDomain = true;
+
+                if (isFromDomain) {
+                    threads[i].reply(sentMessage, {
+                        name: "Mo & Co. Real Estate Transaction Coordinators",
+                        from: "team@moandcotc.com"
+                    });
+                }
+            }
+        }
+    }
+}
